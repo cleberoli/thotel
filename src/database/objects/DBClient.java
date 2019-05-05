@@ -1,22 +1,39 @@
-package database;
+package database.objects;
 
-public class ClientObject {
+import database.DatabaseObject;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+
+public class DBClient implements DatabaseObject {
 
     private int id;
     private String name;
     private String phoneNumber;
+    private boolean deleted;
 
-    public ClientObject(int id, String name, String phoneNumber) {
+    @Contract(pure = true)
+    public DBClient(int id, String name, String phoneNumber) {
         this.id = id;
         this.name = name;
         this.phoneNumber = phoneNumber;
+        this.deleted = false;
     }
 
-    public ClientObject(String attributes) {
+    @Contract(pure = true)
+    public DBClient(int id, String name, String phoneNumber, boolean deleted) {
+        this.id = id;
+        this.name = name;
+        this.phoneNumber = phoneNumber;
+        this.deleted = deleted;
+    }
+
+    @Contract(pure = true)
+    public DBClient(@NotNull String attributes) {
         String[] parts = attributes.split("#");
         this.id = Integer.parseInt(parts[0]);
         this.name = parts[1];
         this.phoneNumber = parts[2];
+        this.deleted = Boolean.parseBoolean(parts[3]);
     }
 
     @Override
@@ -46,5 +63,13 @@ public class ClientObject {
 
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
+    }
+
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
     }
 }

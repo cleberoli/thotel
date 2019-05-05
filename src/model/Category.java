@@ -1,5 +1,7 @@
 package model;
 
+import org.jetbrains.annotations.Contract;
+
 public class Category {
 
     private int id;
@@ -9,6 +11,17 @@ public class Category {
     private boolean extraBed;
     private double extraBedFee;
 
+    @Contract(pure = true)
+    public Category(String name, double dailyRate, int capacity) {
+        this.id = -1;
+        this.name = name;
+        this.dailyRate = dailyRate;
+        this.capacity = capacity;
+        this.extraBed = true;
+        this.extraBedFee = 0.3;
+    }
+
+    @Contract(pure = true)
     public Category(int id, String name, double dailyRate, int capacity) {
         this.id = id;
         this.name = name;
@@ -18,6 +31,17 @@ public class Category {
         this.extraBedFee = 0.3;
     }
 
+    @Contract(pure = true)
+    public Category(String name, double dailyRate, int capacity, boolean extraBed, double extraBedFee) {
+        this.id = -1;
+        this.name = name;
+        this.dailyRate = dailyRate;
+        this.capacity = capacity;
+        this.extraBed = extraBed;
+        this.extraBedFee = extraBedFee;
+    }
+
+    @Contract(pure = true)
     public Category(int id, String name, double dailyRate, int capacity, boolean extraBed, double extraBedFee) {
         this.id = id;
         this.name = name;

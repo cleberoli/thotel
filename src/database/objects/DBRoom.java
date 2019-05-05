@@ -1,18 +1,30 @@
-package database;
+package database.objects;
 
-public class RoomObject {
+import database.DatabaseObject;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+
+public class DBRoom implements DatabaseObject {
 
     private int id;
     private int idCategory;
     private boolean deleted;
 
-    public RoomObject(int id, int idCategory, boolean deleted) {
+    @Contract(pure = true)
+    public DBRoom(int id, int idCategory) {
+        this.id = id;
+        this.idCategory = idCategory;
+        this.deleted = false;
+    }
+
+    @Contract(pure = true)
+    public DBRoom(int id, int idCategory, boolean deleted) {
         this.id = id;
         this.idCategory = idCategory;
         this.deleted = deleted;
     }
 
-    public RoomObject(String attributes) {
+    public DBRoom(@NotNull String attributes) {
         String[] parts = attributes.split("#");
         this.id = Integer.parseInt(parts[0]);
         this.idCategory = Integer.parseInt(parts[1]);

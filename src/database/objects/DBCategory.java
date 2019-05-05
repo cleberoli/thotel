@@ -1,6 +1,10 @@
-package database;
+package database.objects;
 
-public class CategoryObject {
+import database.DatabaseObject;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+
+public class DBCategory implements DatabaseObject {
 
     private int id;
     private String name;
@@ -8,17 +12,32 @@ public class CategoryObject {
     private int capacity;
     private boolean extraBed;
     private double extraBedFee;
+    private boolean deleted;
 
-    public CategoryObject(int id, String name, double dailyRate, int capacity, boolean extraBed, double extraBedFee) {
+    @Contract(pure = true)
+    public DBCategory(int id, String name, double dailyRate, int capacity, boolean extraBed, double extraBedFee) {
         this.id = id;
         this.name = name;
         this.dailyRate = dailyRate;
         this.capacity = capacity;
         this.extraBed = extraBed;
         this.extraBedFee = extraBedFee;
+        this.deleted = false;
     }
 
-    public CategoryObject(String attributes) {
+    @Contract(pure = true)
+    public DBCategory(int id, String name, double dailyRate, int capacity, boolean extraBed, double extraBedFee, boolean deleted) {
+        this.id = id;
+        this.name = name;
+        this.dailyRate = dailyRate;
+        this.capacity = capacity;
+        this.extraBed = extraBed;
+        this.extraBedFee = extraBedFee;
+        this.deleted = deleted;
+    }
+
+    @Contract(pure = true)
+    public DBCategory(@NotNull String attributes) {
         String[] parts = attributes.split("#");
         this.id = Integer.parseInt(parts[0]);
         this.name = parts[1];
@@ -26,11 +45,12 @@ public class CategoryObject {
         this.capacity = Integer.parseInt(parts[3]);
         this.extraBed = Boolean.parseBoolean(parts[4]);
         this.extraBedFee = Double.parseDouble(parts[5]);
+        this.deleted = Boolean.parseBoolean(parts[6]);
     }
 
     @Override
     public String toString() {
-        return id + "#" + name + "#" + dailyRate + "#" + capacity + "#" + extraBed + "#" + extraBedFee;
+        return id + "#" + name + "#" + dailyRate + "#" + capacity + "#" + extraBed + "#" + extraBedFee + "#" + deleted;
     }
 
     public int getId() {
@@ -79,5 +99,13 @@ public class CategoryObject {
 
     public void setExtraBedFee(double extraBedFee) {
         this.extraBedFee = extraBedFee;
+    }
+
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
     }
 }

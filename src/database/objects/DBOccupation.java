@@ -1,4 +1,9 @@
-package database;
+package database.objects;
+
+import database.DatabaseObject;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -6,7 +11,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 
-public class ReservationObject {
+public class DBOccupation implements DatabaseObject {
 
     private int id;
     private int idClient;
@@ -14,17 +19,59 @@ public class ReservationObject {
     private int guests;
     private Date checkinDate;
     private Date expectedCheckoutDate;
+    private Date checkoutDate;
+    private boolean deleted;
 
-    public ReservationObject(int id, int idClient, int idRoom, int guests, Date checkinDate, Date expectedCheckoutDate) {
+    @Contract(pure = true)
+    public DBOccupation(int id, int idClient, int idRoom, int guests, Date checkinDate, Date expectedCheckoutDate) {
         this.id = id;
         this.idClient = idClient;
         this.idRoom = idRoom;
         this.guests = guests;
         this.checkinDate = checkinDate;
         this.expectedCheckoutDate = expectedCheckoutDate;
+        this.checkoutDate = null;
+        this.deleted = false;
     }
 
-    public ReservationObject(String attributes) {
+    @Contract(pure = true)
+    public DBOccupation(int id, int idClient, int idRoom, int guests, Date checkinDate, Date expectedCheckoutDate, boolean deleted) {
+        this.id = id;
+        this.idClient = idClient;
+        this.idRoom = idRoom;
+        this.guests = guests;
+        this.checkinDate = checkinDate;
+        this.expectedCheckoutDate = expectedCheckoutDate;
+        this.checkoutDate = null;
+        this.deleted = deleted;
+    }
+
+    @Contract(pure = true)
+    public DBOccupation(int id, int idClient, int idRoom, int guests, Date checkinDate, Date expectedCheckoutDate,@Nullable Date checkoutDate) {
+        this.id = id;
+        this.idClient = idClient;
+        this.idRoom = idRoom;
+        this.guests = guests;
+        this.checkinDate = checkinDate;
+        this.expectedCheckoutDate = expectedCheckoutDate;
+        this.checkoutDate = checkoutDate;
+        this.deleted = false;
+    }
+
+    @Contract(pure = true)
+    public DBOccupation(int id, int idClient, int idRoom, int guests, Date checkinDate, Date expectedCheckoutDate,@Nullable Date checkoutDate, boolean deleted) {
+        this.id = id;
+        this.idClient = idClient;
+        this.idRoom = idRoom;
+        this.guests = guests;
+        this.checkinDate = checkinDate;
+        this.expectedCheckoutDate = expectedCheckoutDate;
+        this.checkoutDate = checkoutDate;
+        this.deleted = deleted;
+    }
+
+    @Contract(pure = true)
+    public DBOccupation(@NotNull String attributes) {
         try {
             String[] parts = attributes.split("#");
             this.id = Integer.parseInt(parts[0]);
@@ -71,6 +118,14 @@ public class ReservationObject {
             } else {
                 this.expectedCheckoutDate = new SimpleDateFormat("dd/MM/yyyy").parse(parts[5]);
             }
+
+            if (parts[6].equals("null")) {
+                this.checkoutDate = null;
+            } else {
+                this.checkoutDate = new SimpleDateFormat("dd/MM/yyyy").parse(parts[6]);
+            }
+
+            this.deleted = Boolean.parseBoolean(parts[7]);
         } catch (ParseException e) {
             e.printStackTrace();
         }
@@ -78,8 +133,14 @@ public class ReservationObject {
 
     @Override
     public String toString() {
-            return id + "#" + idClient + "#" + idRoom + "#" + new SimpleDateFormat("dd/MM/yyyy").format(checkinDate) +
-                    "#" + new SimpleDateFormat("dd/MM/yyyy").format(expectedCheckoutDate);
+        if (checkoutDate != null) {
+            return id + "#" + idClient + "#" + idRoom + "#" + guests + "#" + new SimpleDateFormat("dd/MM/yyyy").format(checkinDate) +
+                    "#" + new SimpleDateFormat("dd/MM/yyyy").format(expectedCheckoutDate) +
+                    "#" + new SimpleDateFormat("dd/MM/yyyy").format(checkoutDate) + "#" + deleted;
+        } else {
+            return id + "#" + idClient + "#" + idRoom + "#" + guests  + "#" + new SimpleDateFormat("dd/MM/yyyy").format(checkinDate) +
+                    "#" + new SimpleDateFormat("dd/MM/yyyy").format(expectedCheckoutDate) + "#null#" + deleted;
+        }
     }
 
     public int getId() {
@@ -128,5 +189,13 @@ public class ReservationObject {
 
     public void setExpectedCheckoutDate(Date expectedCheckoutDate) {
         this.expectedCheckoutDate = expectedCheckoutDate;
+    }
+
+    public Date getCheckoutDate() {
+        return checkoutDate;
+    }
+
+    public void setCheckoutDate(Date checkoutDate) {
+        this.checkoutDate = checkoutDate;
     }
 }
