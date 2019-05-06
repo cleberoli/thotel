@@ -5,23 +5,23 @@ import org.jetbrains.annotations.Contract;
 public class Room {
 
     private int id;
-    private int idCategory;
+    private int categoryId;
 
     @Contract(pure = true)
-    public Room(int idCategory) {
+    public Room(int categoryId) {
         this.id = -1;
-        this.idCategory = idCategory;
+        this.categoryId = categoryId;
     }
 
     @Contract(pure = true)
-    public Room(int id, int idCategory) {
+    public Room(int id, int categoryId) {
         this.id = id;
-        this.idCategory = idCategory;
+        this.categoryId = categoryId;
     }
 
     @Override
     public String toString() {
-        return id + "#" + idCategory;
+        return id + "#" + categoryId;
     }
 
     public int getId() {
@@ -32,11 +32,11 @@ public class Room {
         this.id = id;
     }
 
-    public int getIdCategory() {
-        return idCategory;
+    public int getCategoryId() {
+        return categoryId;
     }
 
-    public void setIdCategory(int idCategory) {
-        this.idCategory = idCategory;
+    public void setCategoryId(int categoryId) {
+        this.categoryId = categoryId;
     }
 }

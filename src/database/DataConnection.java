@@ -1,42 +1,100 @@
 package database;
 
-import database.objects.*;
-import model.*;
-import org.jetbrains.annotations.NotNull;
-
-import java.io.*;
-import java.util.ArrayList;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 
 public class DataConnection {
 
+    protected static Connection connection;
+
     private static DataConnection instance;
+    private String userName;
+    private String password;
+    private String url;
+    private String jdbcDriver;
+    private String db = "thotel";
 
-    public enum DB_OBJECT {CATEGORY, CLIENT, OCCUPATION, RESERVATION, ROOM}
-    public enum DB_COMP {EQ, LT, MT, LE, ME}
-
-    private static final String PATH_DB = "db";
-    private static final String PATH_ROOMS = "db/rooms.thtl";
-    private static final String PATH_CATEGORIES = "db/categories.thtl";
-    private static final String PATH_CLIENTS = "db/clients.thtl";
-    private static final String PATH_RESERVATIONS = "db/reservations.thtl";
-    private static final String PATH_OCCUPATIONS = "db/occupations.thtl";
-
-    private static final File dbFolder = new File(PATH_DB);
-    private static final File categoriesFile = new File(PATH_CATEGORIES);
-    private static final File roomsFile = new File(PATH_ROOMS);
-    private static final File clientsFile = new File(PATH_CLIENTS);
-    private static final File occupationsFile = new File(PATH_OCCUPATIONS);
-    private static final File reservationsFile = new File(PATH_RESERVATIONS);
-
-    private static final ArrayList<DBCategory> categories = new ArrayList<>();
-    private static final ArrayList<DBRoom> rooms = new ArrayList<>();
-    private static final ArrayList<DBClient> clients = new ArrayList<>();
-    private static final ArrayList<DBOccupation> occupations = new ArrayList<>();
-    private static final ArrayList<DBReservation> reservations = new ArrayList<>();
+    private PreparedStatement ps;
 
     private DataConnection() {
-        setup();
-        load();
+        userName = "postgres";
+        password = "postgres";
+        url = "jdbc:postgresql://localhost:5432/thotel";
+        jdbcDriver = "org.postgresql.Driver";
+        setupDatabase();
+    }
+
+    public Connection getConnection() {
+        try {
+            if (connection == null) {
+                Class.forName(jdbcDriver);
+                connection = DriverManager.getConnection(url, userName, password);
+            } else if (connection.isClosed()) {
+                connection = null;
+                return getConnection();
+            }
+        } catch (ClassNotFoundException e) {
+            System.out.println(e.getMessage());
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+
+        ps = null;
+
+        return connection;
+    }
+
+    public void closeConnection() {
+        if (connection != null) {
+            try {
+                connection.close();
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
+            }
+        }
+    }
+
+    public void setDb(String database) {
+        setUrl(database);
+        db = database;
+    }
+
+    public String getDb() {
+        return db;
+    }
+
+    public ResultSet sql(String script) {
+        try {
+            ps = this.getConnection().prepareStatement(script);
+            ResultSet answer = ps.executeQuery();
+            this.closeConnection();
+            return answer;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public void executeUpdate(String script) {
+        try {
+            this.getConnection().prepareStatement(script).executeUpdate();
+            this.closeConnection();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void setUrl(String database){
+        if((database != null) && (!database.equals("")))
+            url = "jdbc:postgresql://localhost:5432/" + database;
     }
 
     public static DataConnection getInstance() {
@@ -46,337 +104,133 @@ public class DataConnection {
         return instance;
     }
 
-    public boolean insert(Object databaseObject) {
-        if (isValidDatabaseObject(databaseObject)) {
-            if (databaseObject instanceof Category) {
-                Category category = (Category) databaseObject;
-                DBCategory dbCategory = new DBCategory(categories.size() + 1, category.getName(), category.getDailyRate(), category.getCapacity(), category.isExtraBed(), category.getExtraBedFee());
-                categories.add(dbCategory);
-                writeDatabaseObject(categoriesFile, dbCategory);
-                return true;
-            } else if (databaseObject instanceof Client) {
-                Client client = (Client) databaseObject;
-                DBClient dbClient = new DBClient(clients.size() + 101, client.getName(), client.getPhoneNumber());
-                clients.add(dbClient);
-                writeDatabaseObject(clientsFile, dbClient);
-                return true;
-            } else if (databaseObject instanceof Occupation) {
-                Occupation occupation = (Occupation)databaseObject;
-                DBOccupation dbOccupation = new DBOccupation(occupations.size() + 1, occupation.getIdClient(), occupation.getIdRoom(), occupation.getGuests(), occupation.getCheckinDate(), occupation.getExpectedCheckoutDate(), occupation.getCheckoutDate());
-                occupations.add(dbOccupation);
-                writeDatabaseObject(occupationsFile, dbOccupation);
-                return true;
-            } else if (databaseObject instanceof Reservation) {
-                Reservation reservation = (Reservation)databaseObject;
-                DBReservation dbReservation = new DBReservation(reservations.size() + 1, reservation.getIdClient(), reservation.getIdRoom(), reservation.getGuests(), reservation.getExpectedCheckinDate(), reservation.getExpectedCheckoutDate());
-                reservations.add(dbReservation);
-                writeDatabaseObject(reservationsFile, dbReservation);
-                return true;
-            } else if (databaseObject instanceof Room) {
-                Room room = (Room)databaseObject;
-                DBRoom dbRoom = new DBRoom(rooms.size() + 1, room.getIdCategory());
-                rooms.add(dbRoom);
-                writeDatabaseObject(roomsFile, dbRoom);
-            }
-        }
-        return false;
+    private void setupDatabase() {
+        createTables();
+        populateCategoryTable();
+        populateClientTable();
+        populateRoomTable();
+        populateOccupationTable();
+        populateReservationTable();
     }
 
-    public boolean update(Object databaseObject) {
-        if (isValidDatabaseObject(databaseObject)) {
-            if (databaseObject instanceof Category) {
-                Category category = (Category)databaseObject;
-
-                for (DBCategory dbCategory: categories) {
-                    if ((category.getId() == dbCategory.getId()) && !dbCategory.isDeleted()) {
-                        dbCategory.setName(category.getName());
-                        dbCategory.setDailyRate(category.getDailyRate());
-                        dbCategory.setCapacity(category.getCapacity());
-                        dbCategory.setExtraBed(category.isExtraBed());
-                        dbCategory.setExtraBedFee(category.getExtraBedFee());
-                        writeDatabaseObjectFile(DB_OBJECT.CATEGORY);
-                        break;
-                    }
-                }
-            }
-        }
-        return false;
+    private void createTables() {
+        executeUpdate("DROP TABLE IF EXISTS category, client, occupation, reservation, room;");
+        executeUpdate("CREATE TABLE IF NOT EXISTS category (\n" +
+                "    id integer NOT NULL GENERATED BY DEFAULT AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1 ),\n" +
+                "    name VARCHAR NOT NULL,\n" +
+                "    daily_rate real NOT NULL,\n" +
+                "    capacity integer NOT NULL,\n" +
+                "    extra_bed boolean NOT NULL DEFAULT true,\n" +
+                "    extra_bed_fee real NOT NULL DEFAULT 0.3,\n" +
+                "    CONSTRAINT category_pkey PRIMARY KEY (id),\n" +
+                "    CONSTRAINT category_name_key UNIQUE (name)\n" +
+                ");");
+        executeUpdate("CREATE TABLE IF NOT EXISTS client (\n" +
+                "    id integer NOT NULL GENERATED BY DEFAULT AS IDENTITY ( INCREMENT 1 START 101 MINVALUE 101 MAXVALUE 2147483647 CACHE 1 ),\n" +
+                "    name VARCHAR NOT NULL,\n" +
+                "    phone VARCHAR(20) NOT NULL,\n" +
+                "    CONSTRAINT client_pkey PRIMARY KEY (id)\n" +
+                ");");
+        executeUpdate("CREATE TABLE IF NOT EXISTS room (\n" +
+                "    id integer NOT NULL GENERATED BY DEFAULT AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1 ),\n" +
+                "    category_id integer NOT NULL,\n" +
+                "    CONSTRAINT room_pkey PRIMARY KEY (id),\n" +
+                "    CONSTRAINT romm_category_id_fkey FOREIGN KEY (category_id)\n" +
+                "        REFERENCES category (id) MATCH SIMPLE\n" +
+                "        ON UPDATE NO ACTION\n" +
+                "        ON DELETE NO ACTION\n" +
+                ");");
+        executeUpdate("CREATE TABLE IF NOT EXISTS occupation (\n" +
+                "    id integer NOT NULL GENERATED BY DEFAULT AS IDENTITY (INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1),\n" +
+                "    client_id integer NOT NULL,\n" +
+                "    room_id integer NOT NULL,\n" +
+                "    guests integer NOT NULL,\n" +
+                "    checkin_date date NOT NULL,\n" +
+                "    expected_checkout_date date NOT NULL,\n" +
+                "    checkout_date date,\n" +
+                "    total_amount real,\n" +
+                "    CONSTRAINT occupation_pkey PRIMARY KEY (id),\n" +
+                "    CONSTRAINT occupation_client_id_fkey FOREIGN KEY (client_id)\n" +
+                "        REFERENCES client (id) MATCH SIMPLE\n" +
+                "        ON UPDATE NO ACTION\n" +
+                "        ON DELETE NO ACTION,\n" +
+                "    CONSTRAINT occupation_room_id_fkey FOREIGN KEY (room_id)\n" +
+                "        REFERENCES room (id) MATCH SIMPLE\n" +
+                "        ON UPDATE NO ACTION\n" +
+                "        ON DELETE NO ACTION\n" +
+                ");");
+        executeUpdate("CREATE TABLE IF NOT EXISTS reservation (\n" +
+                "    id integer NOT NULL GENERATED BY DEFAULT AS IDENTITY (INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1),\n" +
+                "    client_id integer NOT NULL,\n" +
+                "    room_id integer NOT NULL,\n" +
+                "    guests integer NOT NULL,\n" +
+                "    expected_checkin_date date NOT NULL,\n" +
+                "    expected_checkout_date date NOT NULL,\n" +
+                "    CONSTRAINT reservation_pkey PRIMARY KEY (id),\n" +
+                "    CONSTRAINT reservation_client_id_fkey FOREIGN KEY (client_id)\n" +
+                "        REFERENCES client (id) MATCH SIMPLE\n" +
+                "        ON UPDATE NO ACTION\n" +
+                "        ON DELETE NO ACTION,\n" +
+                "    CONSTRAINT reservation_room_id_fkey FOREIGN KEY (room_id)\n" +
+                "        REFERENCES room (id) MATCH SIMPLE\n" +
+                "        ON UPDATE NO ACTION\n" +
+                "        ON DELETE NO ACTION\n" +
+                ");");
     }
 
-    public boolean delete(Object databaseObject) {
-        return false;
+    private void populateCategoryTable() {
+        executeUpdate("INSERT INTO category (name, daily_rate, capacity) VALUES ('Standard', 268, 2);");
+        executeUpdate("INSERT INTO category (name, daily_rate, capacity) VALUES ('Apartamento Vista Bosque', 315, 4);");
+        executeUpdate("INSERT INTO category (name, daily_rate, capacity) VALUES ('Apartamento Vista Vale', 353, 4);");
+        executeUpdate("INSERT INTO category (name, daily_rate, capacity) VALUES ('Suíte', 498, 2);");
     }
 
-    public Object select(DB_OBJECT databaseObject, String key, String value, DB_COMP comp) {
-        switch (databaseObject) {
-            case CATEGORY:
-                return selectCategory(key, value, comp);
-            case CLIENT:
-                return selectClient(key, value, comp);
-            case OCCUPATION:
-                return selectOccupation(key, value, comp);
-            case RESERVATION:
-                return selectReservation(key, value, comp);
-            case ROOM:
-                return selectRoom(key, value, comp);
-            default:
-                return null;
-        }
+    private void populateClientTable() {
+        executeUpdate("INSERT INTO client (name, phone) VALUES ('Reginaldo Farias', '(51) 96186617');");
+        executeUpdate("INSERT INTO client (name, phone) VALUES ('Samanta Souza', '(21) 81534599');");
+        executeUpdate("INSERT INTO client (name, phone) VALUES ('Augusto Santos', '(81) 92097644');");
+        executeUpdate("INSERT INTO client (name, phone) VALUES ('Cláudio Silva', '(48) 99764831');");
+        executeUpdate("INSERT INTO client (name, phone) VALUES ('Mariano Santana', '(11) 94523456');");
     }
 
-    private Object selectCategory(String key, String value, DB_COMP comp) {
-        ArrayList<Category> categoryArray = new ArrayList<>();
-        switch (key) {
-            case "":
-                for (DBCategory category: categories) {
-                    if (!category.isDeleted()) {
-                        categoryArray.add(new Category(category.getId(), category.getName(), category.getDailyRate(), category.getCapacity(), category.isExtraBed(), category.getExtraBedFee()));
-                    }
-                }
-                return categoryArray;
-            case "id":
-                for (DBCategory category: categories) {
-                    if ((category.getId() == Integer.parseInt(value)) && !category.isDeleted()) {
-                        return new Category(category.getId(), category.getName(), category.getDailyRate(), category.getCapacity(), category.isExtraBed(), category.getExtraBedFee());
-                    }
-                }
-                return null;
-            case "name":
-                for (DBCategory category: categories) {
-                    if ((category.getName().equals(value)) && !category.isDeleted()) {
-                        return new Category(category.getId(), category.getName(), category.getDailyRate(), category.getCapacity(), category.isExtraBed(), category.getExtraBedFee());
-                    }
-                }
-                return null;
-            case "capacity":
-                for (DBCategory category: categories) {
-                    if ((category.getCapacity() == Double.parseDouble(value)) &&!category.isDeleted()) {
-                        categoryArray.add(new Category(category.getId(), category.getName(), category.getDailyRate(), category.getCapacity(), category.isExtraBed(), category.getExtraBedFee()));
-                    }
-                }
-                return categoryArray;
-            default:
-                return null;
-        }
+    private void populateOccupationTable() {
+        Date currentDate = new Date();
+        LocalDateTime localDateTime = currentDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+
+        Date checkinDate = currentDate;
+        Date checkoutDate = Date.from(localDateTime.plusDays(2).atZone(ZoneId.systemDefault()).toInstant());
+        executeUpdate("INSERT INTO occupation (client_id, room_id, guests, checkin_date, expected_checkout_date) \n" +
+                "\tVALUES (104, 1, 3, '"+new SimpleDateFormat("yyyy-MM-dd").format(checkinDate)+
+                "', '"+new SimpleDateFormat("yyyy-MM-dd").format(checkoutDate)+"');");
+
+        checkinDate = Date.from(localDateTime.minusDays(1).atZone(ZoneId.systemDefault()).toInstant());
+        checkoutDate = Date.from(localDateTime.plusDays(3).atZone(ZoneId.systemDefault()).toInstant());
+        executeUpdate("INSERT INTO occupation (client_id, room_id, guests, checkin_date, expected_checkout_date) \n" +
+                "\tVALUES (101, 4, 4, '"+new SimpleDateFormat("yyyy-MM-dd").format(checkinDate)+
+                "', '"+new SimpleDateFormat("yyyy-MM-dd").format(checkoutDate)+"');");
     }
 
-    private Object selectClient(String key, String value, DB_COMP comp) {
-        ArrayList<Client> clientArray = new ArrayList<>();
-        switch (key) {
-            case "":
-                for (DBClient client: clients) {
-                    if (!client.isDeleted()) {
-                        clientArray.add(new Client(client.getId(), client.getName(), client.getPhoneNumber()));
-                    }
-                }
-                return clientArray;
-            case "id":
-                for (DBClient client: clients) {
-                    if ((client.getId() == Integer.parseInt(value)) && !client.isDeleted()) {
-                        return new Client(client.getId(), client.getName(), client.getPhoneNumber());
-                    }
-                }
-                return null;
-            case "name":
-                for (DBClient client: clients) {
-                    if ((client.getName().equals(value)) && !client.isDeleted()) {
-                        clientArray.add(new Client(client.getId(), client.getName(), client.getPhoneNumber()));
-                    }
-                }
-                return clientArray;
-            default:
-                return null;
-        }
+    private void populateReservationTable() {
+        Date currentDate = new Date();
+        LocalDateTime localDateTime = currentDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+
+        Date checkinDate = Date.from(localDateTime.plusDays(0).atZone(ZoneId.systemDefault()).toInstant());
+        Date checkoutDate = Date.from(localDateTime.plusDays(7).atZone(ZoneId.systemDefault()).toInstant());
+        executeUpdate("INSERT INTO reservation (client_id, room_id, guests, expected_checkin_date, expected_checkout_date)\n" +
+                "\tVALUES (103, 10, 2, '"+new SimpleDateFormat("yyyy-MM-dd").format(checkinDate)+
+                "', '"+new SimpleDateFormat("yyyy-MM-dd").format(checkoutDate)+"');");
     }
 
-    private Object selectOccupation(String key, String value, DB_COMP comp) {
-        return null;
+    private void populateRoomTable() {
+        executeUpdate("INSERT INTO room (category_id) VALUES (1);");
+        executeUpdate("INSERT INTO room (category_id) VALUES (1);");
+        executeUpdate("INSERT INTO room (category_id) VALUES (2);");
+        executeUpdate("INSERT INTO room (category_id) VALUES (2);");
+        executeUpdate("INSERT INTO room (category_id) VALUES (2);");
+        executeUpdate("INSERT INTO room (category_id) VALUES (3);");
+        executeUpdate("INSERT INTO room (category_id) VALUES (3);");
+        executeUpdate("INSERT INTO room (category_id) VALUES (3);");
+        executeUpdate("INSERT INTO room (category_id) VALUES (4);");
+        executeUpdate("INSERT INTO room (category_id) VALUES (4);");
     }
-
-    private Object selectReservation(String key, String value, DB_COMP comp) {
-        return null;
-    }
-
-    private Object selectRoom(String key, String value, DB_COMP comp) {
-        ArrayList<Room> roomArray = new ArrayList<>();
-        switch (key) {
-            case "":
-                for (DBRoom room: rooms) {
-                    if (!room.isDeleted()) {
-                        roomArray.add(new Room(room.getId(), room.getIdCategory()));
-                    }
-                }
-                return roomArray;
-            case "id":
-                for (DBRoom room: rooms) {
-                    if ((room.getId() == Integer.parseInt(value)) && !room.isDeleted()) {
-                        return new Room(room.getId(), room.getIdCategory());
-                    }
-                }
-                return null;
-            case "idCategory":
-                for (DBRoom room: rooms) {
-                    if ((room.getIdCategory() == Integer.parseInt(value)) && !room.isDeleted()) {
-                        roomArray.add(new Room(room.getId(), room.getIdCategory()));
-                    }
-                }
-                return roomArray;
-        }
-        return null;
-    }
-
-    private void setup() {
-        try {
-            dbFolder.mkdirs();
-            categoriesFile.createNewFile();
-            roomsFile.createNewFile();
-            clientsFile.createNewFile();
-            occupationsFile.createNewFile();
-            reservationsFile.createNewFile();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void load() {
-        loadDatabaseObject(DB_OBJECT.CATEGORY);
-        loadDatabaseObject(DB_OBJECT.ROOM);
-        loadDatabaseObject(DB_OBJECT.CLIENT);
-        loadDatabaseObject(DB_OBJECT.OCCUPATION);
-        loadDatabaseObject(DB_OBJECT.RESERVATION);
-    }
-
-    private void writeDatabaseObject(File file, @NotNull Object databaseObject) {
-        try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter(file, true));
-            writer.newLine();
-            writer.write(databaseObject.toString());
-            writer.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void clearDatabaseObjectFile(File file) {
-        try {
-            new FileWriter(file, false).close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void writeDatabaseObjectFile(DB_OBJECT databaseObject) {
-        switch (databaseObject) {
-            case CATEGORY:
-                clearDatabaseObjectFile(categoriesFile);
-                for (DBCategory category: categories) {
-                    writeDatabaseObject(categoriesFile, category);
-                }
-                break;
-            case CLIENT:
-                clearDatabaseObjectFile(clientsFile);
-                for (DBClient client: clients) {
-                    writeDatabaseObject(clientsFile, client);
-                }
-                break;
-            case OCCUPATION:
-                clearDatabaseObjectFile(occupationsFile);
-                for (DBOccupation occupation: occupations) {
-                    writeDatabaseObject(occupationsFile, occupation);
-                }
-                break;
-            case RESERVATION:
-                clearDatabaseObjectFile(reservationsFile);
-                for (DBReservation reservation: reservations) {
-                    writeDatabaseObject(reservationsFile, reservation);
-                }
-                break;
-            case ROOM:
-                clearDatabaseObjectFile(roomsFile);
-                for (DBRoom room: rooms) {
-                    writeDatabaseObject(roomsFile, room);
-                }
-                break;
-            default:
-                break;
-        }
-    }
-
-    private boolean isValidDatabaseObject(@NotNull Object databaseObject) {
-        if (databaseObject instanceof Category) {
-            return true;
-        } else if (databaseObject instanceof Client) {
-            return true;
-        } else if (databaseObject instanceof Occupation) {
-            Occupation occupation = (Occupation)databaseObject;
-            return (select(DB_OBJECT.CLIENT, "id", Integer.toString(occupation.getIdClient()), DB_COMP.EQ) != null) && (select(DB_OBJECT.ROOM, "id", Integer.toString(occupation.getIdRoom()), DB_COMP.EQ) != null);
-        } else if (databaseObject instanceof Reservation) {
-            Reservation reservation = (Reservation)databaseObject;
-            return (select(DB_OBJECT.CLIENT, "id", Integer.toString(reservation.getIdClient()), DB_COMP.EQ) != null) && (select(DB_OBJECT.ROOM, "id", Integer.toString(reservation.getIdRoom()), DB_COMP.EQ) != null);
-        } else if (databaseObject instanceof Room) {
-            Room room = (Room)databaseObject;
-            return (select(DB_OBJECT.CATEGORY, "id", Integer.toString(room.getIdCategory()), DB_COMP.EQ) != null);
-        } else {
-            return false;
-        }
-    }
-
-    private void loadDatabaseObject(@NotNull DB_OBJECT object) {
-        try {
-            String line;
-            BufferedReader br;
-
-            switch (object) {
-                case CATEGORY:
-                    br = new BufferedReader(new FileReader(categoriesFile));
-
-                    while ((line = br.readLine()) != null) {
-                        categories.add(new DBCategory(line));
-                    }
-
-                    break;
-                case CLIENT:
-                    br = new BufferedReader(new FileReader(clientsFile));
-
-                    while ((line = br.readLine()) != null) {
-                        clients.add(new DBClient(line));
-                    }
-
-                    break;
-                case OCCUPATION:
-                    br = new BufferedReader(new FileReader(occupationsFile));
-
-                    while ((line = br.readLine()) != null) {
-                        occupations.add(new DBOccupation(line));
-                    }
-
-                    break;
-                case RESERVATION:
-                    br = new BufferedReader(new FileReader(reservationsFile));
-
-                    while ((line = br.readLine()) != null) {
-                        reservations.add(new DBReservation(line));
-                    }
-
-                    break;
-                case ROOM:
-                    br = new BufferedReader(new FileReader(roomsFile));
-
-                    while ((line = br.readLine()) != null) {
-                        rooms.add(new DBRoom(line));
-                    }
-
-                    break;
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
 }

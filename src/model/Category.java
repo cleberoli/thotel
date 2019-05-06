@@ -103,4 +103,5 @@ public class Category {
     public void setExtraBedFee(double extraBedFee) {
         this.extraBedFee = extraBedFee;
     }
+
 }

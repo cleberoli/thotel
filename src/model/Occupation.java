@@ -8,59 +8,73 @@ import java.util.Date;
 
 public class Occupation {
 
-    private int idClient;
-    private int idRoom;
+    private int id;
+    private int clientId;
+    private int roomId;
     private int guests;
     private Date checkinDate;
     private Date expectedCheckoutDate;
     private Date checkoutDate;
+    private double totalAmount;
 
     @Contract(pure = true)
-    public Occupation(int idClient, int idRoom, int guests, Date checkinDate, Date expectedCheckoutDate) {
-        this.idClient = idClient;
-        this.idRoom = idRoom;
+    public Occupation(int clientId, int roomId, int guests, Date checkinDate, Date expectedCheckoutDate) {
+        this.id = -1;
+        this.clientId = clientId;
+        this.roomId = roomId;
         this.guests = guests;
         this.checkinDate = checkinDate;
         this.expectedCheckoutDate = expectedCheckoutDate;
         this.checkoutDate = null;
+        this.totalAmount = 0;
     }
 
     @Contract(pure = true)
-    public Occupation(int idClient, int idRoom, int guests, Date checkinDate, Date expectedCheckoutDate, @Nullable Date checkoutDate) {
-        this.idClient = idClient;
-        this.idRoom = idRoom;
+    public Occupation(int id, int clientId, int roomId, int guests, Date checkinDate, Date expectedCheckoutDate, @Nullable Date checkoutDate, @Nullable double totalAmount) {
+        this.id = id;
+        this.clientId = clientId;
+        this.roomId = roomId;
         this.guests = guests;
         this.checkinDate = checkinDate;
         this.expectedCheckoutDate = expectedCheckoutDate;
         this.checkoutDate = checkoutDate;
+        this.totalAmount = totalAmount;
     }
 
     @Override
     public String toString() {
         if (checkoutDate != null) {
-            return idClient + "#" + idRoom + "#" + guests + "#" + new SimpleDateFormat("dd/MM/yyyy").format(checkinDate) +
+            return clientId + "#" + roomId + "#" + guests + "#" + new SimpleDateFormat("dd/MM/yyyy").format(checkinDate) +
                     "#" + new SimpleDateFormat("dd/MM/yyyy").format(expectedCheckoutDate) +
                     "#" + new SimpleDateFormat("dd/MM/yyyy").format(checkoutDate);
         } else {
-            return idClient + "#" + idRoom + "#" + guests + "#" + new SimpleDateFormat("dd/MM/yyyy").format(checkinDate) +
+            return clientId + "#" + roomId + "#" + guests + "#" + new SimpleDateFormat("dd/MM/yyyy").format(checkinDate) +
                     "#" + new SimpleDateFormat("dd/MM/yyyy").format(expectedCheckoutDate) + "#null";
         }
     }
 
-    public int getIdClient() {
-        return idClient;
+    public int getId() {
+        return id;
     }
 
-    public void setIdClient(int idClient) {
-        this.idClient = idClient;
+    public void setId(int id) {
+        this.id = id;
     }
 
-    public int getIdRoom() {
-        return idRoom;
+    public int getClientId() {
+        return clientId;
     }
 
-    public void setIdRoom(int idRoom) {
-        this.idRoom = idRoom;
+    public void setClientId(int clientId) {
+        this.clientId = clientId;
+    }
+
+    public int getRoomId() {
+        return roomId;
+    }
+
+    public void setRoomId(int roomId) {
+        this.roomId = roomId;
     }
 
     public int getGuests() {
@@ -93,5 +107,13 @@ public class Occupation {
 
     public void setCheckoutDate(Date checkoutDate) {
         this.checkoutDate = checkoutDate;
+    }
+
+    public double getTotalAmount() {
+        return totalAmount;
+    }
+
+    public void setTotalAmount(double totalAmount) {
+        this.totalAmount = totalAmount;
     }
 }

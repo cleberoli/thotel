@@ -6,25 +6,25 @@ public class Client {
 
     private int id;
     private String name;
-    private String phoneNumber;
+    private String phone;
 
     @Contract(pure = true)
-    public Client(String name, String phoneNumber) {
+    public Client(String name, String phone) {
         this.id = -1;
         this.name = name;
-        this.phoneNumber = phoneNumber;
+        this.phone = phone;
     }
 
     @Contract(pure = true)
-    public Client(int id, String name, String phoneNumber) {
+    public Client(int id, String name, String phone) {
         this.id = id;
         this.name = name;
-        this.phoneNumber = phoneNumber;
+        this.phone = phone;
     }
 
     @Override
     public String toString() {
-        return id + "#" + name + "#" + phoneNumber;
+        return id + "#" + name + "#" + phone;
     }
 
     public int getId() {
@@ -43,11 +43,11 @@ public class Client {
         this.name = name;
     }
 
-    public String getPhoneNumber() {
-        return phoneNumber;
+    public String getPhone() {
+        return phone;
     }
 
-    public void setPhoneNumber(String phoneNumber) {
-        this.phoneNumber = phoneNumber;
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
 }
