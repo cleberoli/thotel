@@ -1,4 +1,5 @@
-import controllers.AdministrativeManagement;
+import controllers.ClientManagement;
+import controllers.Reports;
 import controllers.OperationsManagement;
 import database.DataConnection;
 
@@ -8,33 +9,18 @@ import java.util.Scanner;
 
 public class Main {
 
-    private static final int MAKE_RESERVATION = 101;
-    private static final int CHECKIN = 102;
-    private static final int CHECKOUT = 103;
-    private static final int HOTEL_REPORT = 201;
-    private static final int CLIENT_REPORT = 202;
-    private static final int ROOM_REPORT = 203;
-    private static final int EXIT = 204;
-    private static final int CREATE_CATEGORY = 301;
-    private static final int UPDATE_CATEGORY = 302;
-    private static final int DELETE_CATEGORY = 303;
-    private static final int RETRIEVE_CATEGORY = 304;
-    private static final int CREATE_CLIENT = 401;
-    private static final int UPDATE_CLIENT = 402;
-    private static final int DELETE_CLIENT = 403;
-    private static final int RETRIEVE_CLIENT = 404;
-    private static final int CREATE_ROOM = 501;
-    private static final int UPDATE_ROOM = 502;
-    private static final int DELETE_ROOM = 503;
-    private static final int RETRIEVE_ROOM  = 504;
-    private static final int[] OPTIONS = {MAKE_RESERVATION, CHECKIN, CHECKOUT,
-            HOTEL_REPORT, CLIENT_REPORT, ROOM_REPORT, EXIT,
-            CREATE_CATEGORY, UPDATE_CATEGORY, DELETE_CATEGORY, RETRIEVE_CATEGORY,
-            CREATE_CLIENT, UPDATE_CLIENT, DELETE_CLIENT, RETRIEVE_CLIENT,
-            CREATE_ROOM, UPDATE_ROOM, DELETE_ROOM, RETRIEVE_ROOM};
+    private static final int CREATE_CLIENT = 101;
+    private static final int MAKE_RESERVATION = 201;
+    private static final int CHECKIN = 202;
+    private static final int CHECKOUT = 203;
+    private static final int HOTEL_REPORT = 301;
+    private static final int CLIENT_REPORT = 302;
+    private static final int ROOM_REPORT = 303;
+    private static final int EXIT = 401;
+    private static final int[] OPTIONS = {CREATE_CLIENT, MAKE_RESERVATION, CHECKIN, CHECKOUT, HOTEL_REPORT, CLIENT_REPORT, ROOM_REPORT, EXIT};
 
     public static void main(String[] args) {
-        setupDatabse();
+        setupDatabase();
         clearScreen();
         welcome();
         menu();
@@ -44,49 +30,29 @@ public class Main {
         while (option != EXIT) {
             clearScreen();
 
-            OperationsManagement operationsManagement = new OperationsManagement();
-
             switch (option) {
+                case CREATE_CLIENT:
+                    ClientManagement.createClient();
+                    break;
                 case MAKE_RESERVATION:
-                    operationsManagement.make();
+                    OperationsManagement.makeReservation();
                     break;
                 case CHECKIN:
-                    operationsManagement.checkIn();
+                    OperationsManagement.checkIn();
                     break;
                 case CHECKOUT:
-                    operationsManagement.checkOut();
+                    OperationsManagement.checkOut();
                     break;
                 case HOTEL_REPORT:
+                    Reports.hotelReport();
                     break;
                 case CLIENT_REPORT:
-                    AdministrativeManagement.clientReport();
+                    Reports.clientReport();
                     break;
                 case ROOM_REPORT:
-                    AdministrativeManagement.roomReport();
+                    Reports.roomReport();
                     break;
                 case EXIT:
-                    break;
-                case CREATE_CATEGORY:
-                    break;
-                case UPDATE_CATEGORY:
-                    break;
-                case DELETE_CATEGORY:
-                    break;
-                case RETRIEVE_CATEGORY:
-                    break;
-                case CREATE_CLIENT:
-                    break;
-                case UPDATE_CLIENT:
-                    break;
-                case DELETE_CLIENT:
-                    break;
-                case CREATE_ROOM:
-                    break;
-                case UPDATE_ROOM:
-                    break;
-                case DELETE_ROOM:
-                    break;
-                case RETRIEVE_ROOM:
                     break;
                 default:
                     break;
@@ -101,7 +67,7 @@ public class Main {
         System.out.println("Thank you for choosing a Umbrella Corporation product.");
     }
 
-    private static void setupDatabse() {
+    private static void setupDatabase() {
         System.out.println("Setting up database. Please wait...");
         DataConnection.getInstance();
     }
@@ -117,38 +83,24 @@ public class Main {
     }
 
     private static void menu() {
-        System.out.println("1) Operations management ===============================================================");
-        System.out.println("101 - Make a reservation");
-        System.out.println("102 - Check-in");
-        System.out.println("103 - Check-out");
+        System.out.println("1) Client management ===================================================================");
+        System.out.println("101 - Create new client");
         System.out.print("\n");
 
-        System.out.println("2) Administrative management ===========================================================");
-        System.out.println("201 - Generate hotel report");
-        System.out.println("202 - Generate client report");
-        System.out.println("203 - Generate room report");
-        System.out.println("204 - Exit");
+        System.out.println("2) Operations management ===============================================================");
+        System.out.println("201 - Make a reservation");
+        System.out.println("202 - Check-in");
+        System.out.println("203 - Check-out");
         System.out.print("\n");
 
-        System.out.println("3) Category management =================================================================");
-        System.out.println("301 - Create new category");
-        System.out.println("302 - Update existing category");
-        System.out.println("303 - Delete existing category");
-        System.out.println("304 - Consult category information");
+        System.out.println("3) Reports =============================================================================");
+        System.out.println("301 - Generate hotel report");
+        System.out.println("302 - Generate client report");
+        System.out.println("303 - Generate room report");
         System.out.print("\n");
 
-        System.out.println("4) Client management ===================================================================");
-        System.out.println("401 - Create new client");
-        System.out.println("402 - Update client information");
-        System.out.println("403 - Delete existing client");
-        System.out.println("404 - Consult client information");
-        System.out.print("\n");
-
-        System.out.println("5) Room management =====================================================================");
-        System.out.println("501 - Create new room");
-        System.out.println("502 - Update room information");
-        System.out.println("503 - Delete existing room");
-        System.out.println("504 - Consult room information");
+        System.out.println("4) Settings ============================================================================");
+        System.out.println("401 - Exit");
         System.out.print("\n");
     }
 
@@ -172,7 +124,7 @@ public class Main {
 
     private static void waitKey() {
         Scanner scanner = new Scanner(System.in);
-        System.out.print("Press any key to go back to the menu... ");
+        System.out.print("\nPress any key to go back to the menu... ");
         scanner.nextLine();
     }
 }

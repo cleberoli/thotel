@@ -12,14 +12,12 @@ import java.util.Date;
 
 public class DataConnection {
 
-    protected static Connection connection;
-
+    private static Connection connection;
     private static DataConnection instance;
     private String userName;
     private String password;
     private String url;
     private String jdbcDriver;
-    private String db = "thotel";
 
     private PreparedStatement ps;
 
@@ -61,15 +59,6 @@ public class DataConnection {
         }
     }
 
-    public void setDb(String database) {
-        setUrl(database);
-        db = database;
-    }
-
-    public String getDb() {
-        return db;
-    }
-
     public ResultSet sql(String script) {
         try {
             ps = this.getConnection().prepareStatement(script);
@@ -90,11 +79,6 @@ public class DataConnection {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-    }
-
-    public void setUrl(String database){
-        if((database != null) && (!database.equals("")))
-            url = "jdbc:postgresql://localhost:5432/" + database;
     }
 
     public static DataConnection getInstance() {

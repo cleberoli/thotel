@@ -11,7 +11,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Scanner;
 
-public class ReadInput {
+public class InputMethods {
 
     public static Client getValidClientById() {
         Scanner scanner = new Scanner(System.in);

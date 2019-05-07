@@ -6,7 +6,7 @@ import model.Occupation;
 import model.Reservation;
 import model.Room;
 import utils.BusinessRules;
-import utils.ReadInput;
+import utils.InputMethods;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -16,25 +16,25 @@ import java.util.concurrent.TimeUnit;
 
 public class OperationsManagement {
 
-    public void make() {
-        System.out.println("101 - Make a reservation ===============================================================");
+    public static void makeReservation() {
+        System.out.println("201 - Make a reservation ===============================================================");
         Reservation reservation;
         String clientName;
         Date expectedCheckinDate, expectedCheckoutDate;
         int roomId, guests;
 
         do {
-            Client client = ReadInput.getValidClientById();
+            Client client = InputMethods.getValidClientById();
             clientName = client.getName();
-            Room room = ReadInput.getValidRoomById();
+            Room room = InputMethods.getValidRoomById();
             roomId = room.getId();
-            expectedCheckinDate = ReadInput.getValidDate("Please enter the check-in date in the format DD/MM/YYYY: ",
+            expectedCheckinDate = InputMethods.getValidDate("Please enter the check-in date in the format DD/MM/YYYY: ",
                     "Please enter the date in the format DD/MM/YYYY: ",
                     "The date entered is not valid.");
-            expectedCheckoutDate = ReadInput.getValidDate("Please enter the check-out date in the format DD/MM/YYYY: ",
+            expectedCheckoutDate = InputMethods.getValidDate("Please enter the check-out date in the format DD/MM/YYYY: ",
                     "Please enter the date in the format DD/MM/YYYY: ",
                     "The date entered is not valid.");
-            guests = ReadInput.getValidGuests("Please enter the number of guests: ",
+            guests = InputMethods.getValidGuests("Please enter the number of guests: ",
                     "Please enter a positive number of guests: ");
 
             reservation = new Reservation(client.getId(), room.getId(), guests, expectedCheckinDate, expectedCheckoutDate);
@@ -50,13 +50,13 @@ public class OperationsManagement {
         System.out.println("NUMBER OF GUESTS: " + guests);
     }
 
-    public void checkIn() {
-        System.out.println("102 - Check-in =========================================================================");
-        Reservation reservation = ReadInput.getValidReservationById();
+    public static void checkIn() {
+        System.out.println("202 - Check-in =========================================================================");
+        Reservation reservation = InputMethods.getValidReservationById();
         boolean deleteReservation = reservation != null;
 
         if (reservation.getExpectedCheckinDate().compareTo(new Date()) == 0) {
-            System.out.println("The check-in date for this reservation is not today. You must make a new reservation.");
+            System.out.println("The check-in date for this reservation is not today. You must makeReservation a new reservation.");
             reservation = null;
             deleteReservation = false;
         }
@@ -65,13 +65,13 @@ public class OperationsManagement {
             Date checkinDate, expectedCheckoutDate;
 
             do {
-                Client client = ReadInput.getValidClientById();
-                Room room = ReadInput.getValidRoomById();
+                Client client = InputMethods.getValidClientById();
+                Room room = InputMethods.getValidRoomById();
                 checkinDate = new Date();
-                expectedCheckoutDate = ReadInput.getValidDate("Please enter the check-out date in the format DD/MM/YYYY: ",
+                expectedCheckoutDate = InputMethods.getValidDate("Please enter the check-out date in the format DD/MM/YYYY: ",
                         "Please enter the date in the format DD/MM/YYYY: ",
                         "The date entered is not valid.");
-                int guests = ReadInput.getValidGuests("Please enter the number of guests: ",
+                int guests = InputMethods.getValidGuests("Please enter the number of guests: ",
                         "Please enter a positive number of guests: ");
 
                 reservation = new Reservation(client.getId(), room.getId(), guests, checkinDate, expectedCheckoutDate);
@@ -96,10 +96,10 @@ public class OperationsManagement {
 
     }
 
-    public void checkOut() {
-        System.out.println("103 - Check-out ========================================================================");
-        Room room = ReadInput.getValidRoomById();
-        Occupation occupation = ReadInput.getValidOccupationByRoom(room.getId());
+    public static void checkOut() {
+        System.out.println("203 - Check-out ========================================================================");
+        Room room = InputMethods.getValidRoomById();
+        Occupation occupation = InputMethods.getValidOccupationByRoom(room.getId());
 
         if (occupation != null) {
             occupation.setCheckoutDate(new Date());
@@ -154,29 +154,7 @@ public class OperationsManagement {
         }
     }
 
-    private int saveReservation(Reservation reservation) {
-        try {
-            DataConnection connection = DataConnection.getInstance();
-            ResultSet rs = connection.sql("INSERT INTO reservation (client_id, room_id, guests, expected_checkin_date, expected_checkout_date)\n" +
-                    "\tVALUES ("+reservation.getClientId()+", "+reservation.getRoomId()+", "+reservation.getGuests()+
-                    ", '"+new SimpleDateFormat("yyyy-MM-dd").format(reservation.getExpectedCheckinDate())+
-                    "', '"+new SimpleDateFormat("yyyy-MM-dd").format(reservation.getExpectedCheckoutDate())+"') RETURNING id;");
-
-            rs.next();
-            return rs.getInt("id");
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return -1;
-    }
-
-    private void deleteReservation(Reservation reservation) {
-        DataConnection connection = DataConnection.getInstance();
-        connection.executeUpdate("DELETE FROM reservation where id =  "+reservation.getId()+";");
-
-    }
-
-    private int saveOccupation(Occupation occupation) {
+    private static int saveOccupation(Occupation occupation) {
         try {
             DataConnection connection = DataConnection.getInstance();
             ResultSet rs = connection.sql("INSERT INTO occupation (client_id, room_id, guests, checkin_date, expected_checkout_date)\n" +
@@ -192,10 +170,32 @@ public class OperationsManagement {
         return -1;
     }
 
-    private void updateOccupation(Occupation occupation) {
+    private static void updateOccupation(Occupation occupation) {
         DataConnection connection = DataConnection.getInstance();
         connection.executeUpdate("UPDATE occupation SET checkout_date='"+occupation.getCheckoutDate()+"'," +
                 "total_amount='"+occupation.getTotalAmount()+"' WHERE id = "+occupation.getId()+";");
+    }
+
+    private static int saveReservation(Reservation reservation) {
+        try {
+            DataConnection connection = DataConnection.getInstance();
+            ResultSet rs = connection.sql("INSERT INTO reservation (client_id, room_id, guests, expected_checkin_date, expected_checkout_date)\n" +
+                    "\tVALUES ("+reservation.getClientId()+", "+reservation.getRoomId()+", "+reservation.getGuests()+
+                    ", '"+new SimpleDateFormat("yyyy-MM-dd").format(reservation.getExpectedCheckinDate())+
+                    "', '"+new SimpleDateFormat("yyyy-MM-dd").format(reservation.getExpectedCheckoutDate())+"') RETURNING id;");
+
+            rs.next();
+            return rs.getInt("id");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    private static void deleteReservation(Reservation reservation) {
+        DataConnection connection = DataConnection.getInstance();
+        connection.executeUpdate("DELETE FROM reservation where id =  "+reservation.getId()+";");
+
     }
 
 }
