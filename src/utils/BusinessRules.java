@@ -24,7 +24,7 @@ public class BusinessRules {
             String checkoutDate = new SimpleDateFormat("yyyy-MM-dd").format(reservation.getExpectedCheckoutDate());
             DataConnection connection = DataConnection.getInstance();
             ResultSet rs = connection.sql("SELECT * from occupation WHERE room_id = "+roomId+" AND NOT EXISTS (\n" +
-                    "\tSELECT * from occupation WHERE checkout_date IS NOT NULL AND checkout_date < '"+checkinDate+"' OR\n" +
+                    "\tSELECT * from occupation WHERE checkout_date IS NOT NULL AND checkout_date <= '"+checkinDate+"' OR\n" +
                     "\t\tcheckout_date IS NULL AND expected_checkout_date < '"+checkinDate+"' OR\n" +
                     "\t\tcheckin_date > '"+checkoutDate+"');");
 
